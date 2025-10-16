@@ -71,7 +71,7 @@ app.get('/delete_User_image', async (req, res) => {
         if(req.session.user){ 
             
             const getObjectParams = {
-                Bucket: 'nooship',
+                Bucket: 'mership',
                 Key: req.session.user.ImageName,
             }
             
@@ -102,7 +102,7 @@ app.post('/upload_profile_image_new', upload.single('newimage'), async (req, res
         
         if(req.session.user.ImageName !== ''){ 
             const getObjectParams = {
-                Bucket: 'nooship',
+                Bucket: 'mership',
                 Key: req.session.user.ImageName,
             }
             
@@ -112,7 +112,7 @@ app.post('/upload_profile_image_new', upload.single('newimage'), async (req, res
         const buffer = await sharp(req.file.buffer).resize({height:200,width:200,fit: "cover"}).toBuffer()
         const ImageName = randomImageName();
         const params ={
-            Bucket: 'nooship',
+            Bucket: 'mership',
             Key: ImageName,
             Body: buffer,
             ContentType: req.file.mimetype,
@@ -124,7 +124,7 @@ app.post('/upload_profile_image_new', upload.single('newimage'), async (req, res
         req.session.user.ImageName = ImageName;
         //get image 
         const getObjectParams = {
-            Bucket: 'nooship',
+            Bucket: 'mership',
             Key: ImageName,
         }
         const command1 = new GetObjectCommand(getObjectParams);
@@ -153,8 +153,8 @@ app.post("/checout_balance",async(req,res)=>{
     if(req.session.user){
     try{
         const charge = await resources.Charge.create({
-            name: "Nooship Payment",
-            description: "This payment will be added to your wallet in Nooship website.",
+            name: "Mership Payment",
+            description: "This payment will be added to your wallet in Mership website.",
             local_price:{
                 amount: amount,
                 currency: "USD",
@@ -310,7 +310,7 @@ app.post("/login", async (req, res) => {
                 if(data[0].Image !== ''){
                     //get image 
                     const getObjectParams = {
-                        Bucket: 'nooship',
+                        Bucket: 'mership',
                         Key: data[0].Image,
                     }
                     const command1 = new GetObjectCommand(getObjectParams);
@@ -409,7 +409,7 @@ app.post("/sendVerCodeAndGetCode", async (req,res)=>{
     const mailOptions = {
     from: 'contact.vexiyart@gmail.com',
     to: req.body.email, // Recipient's email address
-    subject: 'Nooship verification code.',
+    subject: 'Mership verification code.',
     html: htmlContent, // Include HTML content with the replaced code
     };
 
@@ -435,7 +435,7 @@ app.get("/get_unclimedaddress", async (req,res)=>{
                 if(data[i].Image !== ''){
                     //get image 
                     const getObjectParams = {
-                        Bucket: 'nooship',
+                        Bucket: 'mership',
                         Key: data[i].Image,
                     }
                     const command1 = new GetObjectCommand(getObjectParams);
@@ -463,7 +463,7 @@ app.get("/get_climedaddress", async (req,res)=>{
                 if(data[i].Image !== ''){
                     //get image 
                     const getObjectParams = {
-                        Bucket: 'nooship',
+                        Bucket: 'mership',
                         Key: data[i].Image,
                     }
                     const command1 = new GetObjectCommand(getObjectParams);
@@ -533,7 +533,7 @@ app.post("/get_Spesific_Reshipper", async (req,res)=>{
                 if(data[i].Image !== ''){
                     //get image 
                     const getObjectParams = {
-                        Bucket: 'nooship',
+                        Bucket: 'mership',
                         Key: data[i].Image,
                     }
                     const command1 = new GetObjectCommand(getObjectParams);
@@ -774,7 +774,7 @@ app.get("/get_user_data_Mership", async (req,res)=>{
             let ImageUrl = data[0].Image;
             if(data[0].Image !== ''){
                 const getObjectParams = {
-                    Bucket: 'nooship',
+                    Bucket: 'mership',
                     Key: data[0].Image,
                 }
                 const command1 = new GetObjectCommand(getObjectParams);
@@ -1066,7 +1066,7 @@ app.get("/get_all_payments_mership", async (req,res)=>{
                     if(data[i].ImageReshipper !== ''){
                         //get image 
                         const getObjectParams = {
-                            Bucket: 'nooship',
+                            Bucket: 'mership',
                             Key: data[i].ImageReshipper,
                         }
                         const command1 = new GetObjectCommand(getObjectParams);
@@ -1078,7 +1078,7 @@ app.get("/get_all_payments_mership", async (req,res)=>{
                     if(data[i].ImageCustomar !== ''){
                         //get image 
                         const getObjectParams = {
-                            Bucket: 'nooship',
+                            Bucket: 'mership',
                             Key: data[i].ImageCustomar,
                         }
                         const command1 = new GetObjectCommand(getObjectParams);
@@ -1109,7 +1109,7 @@ app.get("/get_recent_payments_mership", async (req,res)=>{
                     if(data[i].ImageReshipper !== ''){
                         //get image 
                         const getObjectParams = {
-                            Bucket: 'nooship',
+                            Bucket: 'mership',
                             Key: data[i].ImageReshipper,
                         }
                         const command1 = new GetObjectCommand(getObjectParams);
@@ -1121,7 +1121,7 @@ app.get("/get_recent_payments_mership", async (req,res)=>{
                     if(data[i].ImageCustomar !== ''){
                         //get image 
                         const getObjectParams = {
-                            Bucket: 'nooship',
+                            Bucket: 'mership',
                             Key: data[i].ImageCustomar,
                         }
                         const command1 = new GetObjectCommand(getObjectParams);
@@ -1157,7 +1157,6 @@ app.get("/get_user_balance_mership", async (req,res)=>{
     
 })
 
+const port = Number(process.env.PORT) || 5080;
+app.listen(port,()=>{console.log(`Listening on port ${port}...`)})
 
-
-
-app.listen(5080,()=>{console.log("Listening...")})
