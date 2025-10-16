@@ -57,7 +57,7 @@ function TermsAndConditions({ status }) {
         <div className="termsInner">
           <b>1. Acceptance of Terms</b>
           <br />
-          Welcome to Shipon. These Terms and Conditions govern your use of our
+          Welcome to Mership. These Terms and Conditions govern your use of our
           reshipping services. By accessing or using the Service, you agree to
           these Terms and our Privacy Policy. If you do not agree, please do not
           use our Service.
@@ -65,7 +65,7 @@ function TermsAndConditions({ status }) {
           <br />
           <b>2. Service Description</b>
           <br />
-          2.1. Shipon is a reshipping service that allows users to purchase and
+          2.1. Mership is a reshipping service that allows users to purchase and
           ship products from various locations worldwide.
           <br /> 2.2. Our service connects you with reshippers who facilitate
           the purchase, consolidation, and shipment of products to your

@@ -1,4 +1,4 @@
--- Shipon MySQL schema
+-- Mership MySQL schema
 --
 -- This script provisions the tables expected by backend/server.js.
 --

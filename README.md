@@ -1,11 +1,11 @@
-# Shipon Deployment Guide
+# Mership Deployment Guide
 
-This repository contains a React (Vite) frontend and an Express.js backend that power the Shipon application. The notes below explain how to configure the environment variables, run the project locally, and prepare it for production hosting.
+This repository contains a React (Vite) frontend and an Express.js backend that power the Mership application. The notes below explain how to configure the environment variables, run the project locally, and prepare it for production hosting.
 
 ## Repository structure
 
 ```
-Shipon/
+Mership/
 ├── backend/   # Express.js API, session handling, MySQL, S3 + Coinbase integrations
 └── frontend/  # React single-page application built with Vite
 ```
@@ -15,8 +15,8 @@ Shipon/
 Before running either project you will need:
 
 - Node.js 18+ and npm
-- A MySQL instance that contains the Shipon schema
-- An AWS S3 bucket (the current code expects a bucket named `shipon`)
+- A MySQL instance that contains the Mership schema
+- An AWS S3 bucket (the current code expects a bucket named `mership`)
 - A Coinbase Commerce account for payment processing
 - (Production) A reverse proxy such as Nginx or a platform that can expose both the API and the static frontend
 
@@ -33,7 +33,7 @@ Before running either project you will need:
    | --- | --- |
    | `COINBASE_CLIENT` | Coinbase Commerce API key used to initialise the SDK. |
    | `CORS_HOST` | Fully-qualified origin that is allowed to call the API (for local dev use `http://localhost:5173`). |
-   | `AWS_ACCESSKEYID` / `AWS_SECRETACCESSKEY` / `AWS_REGION` | AWS credentials for accessing the `shipon` S3 bucket that stores profile images. |
+   | `AWS_ACCESSKEYID` / `AWS_SECRETACCESSKEY` / `AWS_REGION` | AWS credentials for accessing the `mership` S3 bucket that stores profile images. |
    | `SESSION_KEY` | Cookie key for the Express session (e.g. `userId`). |
    | `SESSION_SECRET` | Secret value used to sign the session cookie. |
    | `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` | MySQL connection details. |
@@ -104,13 +104,13 @@ If you want an end-to-end setup on AWS without touching much code, the following
 
 1. **Create the S3 bucket for uploaded assets**
    - In the AWS console go to S3 → “Create bucket”.
-   - Use the bucket name `shipon` to avoid changing the hard-coded bucket reference inside `backend/server.js`. (If you prefer a different name, replace every occurrence of `'shipon'` in that file with your bucket name before deploying.)
+   - Use the bucket name `mership` to avoid changing the hard-coded bucket reference inside `backend/server.js`. (If you prefer a different name, replace every occurrence of `'mership'` in that file with your bucket name before deploying.)
    - Block all public access; the backend uploads objects with the correct ACLs when needed.
    - Under Permissions → Bucket policy allow the IAM user (created below) to access the bucket.
 
 2. **Provision an IAM user for the backend**
    - IAM → Users → “Create user”. Enable programmatic access.
-   - Attach the managed policy `AmazonS3FullAccess` temporarily, then replace it with a custom policy that only grants access to the `shipon` bucket.
+   - Attach the managed policy `AmazonS3FullAccess` temporarily, then replace it with a custom policy that only grants access to the `mership` bucket.
    - Record the **Access key ID** and **Secret access key** – they populate `AWS_ACCESSKEYID` and `AWS_SECRETACCESSKEY` in the backend `.env`.
 
 3. **Launch the MySQL database (Amazon RDS)**
@@ -139,7 +139,7 @@ If you want an end-to-end setup on AWS without touching much code, the following
      npm install
      VITE_API_BASE_URL="https://<your-backend-domain>" npm run build
      ```
-   - Create a second S3 bucket (for example `shipon-frontend`) and enable static website hosting or, preferably, create a CloudFront distribution with the bucket as the origin for HTTPS support.
+   - Create a second S3 bucket (for example `mership-frontend`) and enable static website hosting or, preferably, create a CloudFront distribution with the bucket as the origin for HTTPS support.
    - Upload the contents of `frontend/dist` to the bucket (drag-and-drop in the console or use the AWS CLI).
    - If you use CloudFront, invalidate the cache whenever you deploy a new build.
 
