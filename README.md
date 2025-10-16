@@ -100,32 +100,65 @@ With the environment variables configured and both services running, the applica
 
 ## AWS deployment walkthrough
 
-If you want an end-to-end setup on AWS without touching much code, the following sequence uses only managed services:
+If you want an end-to-end setup on AWS without touching much code, the following sequence uses only managed services and results in a publicly reachable deployment.
+
+> **Tip:** Keep an `.env.production` file locally with your final settings so you can reapply them quickly if you ever recreate the infrastructure.
 
 1. **Create the S3 bucket for uploaded assets**
    - In the AWS console go to S3 → “Create bucket”.
    - Use the bucket name `mership` to avoid changing the hard-coded bucket reference inside `backend/server.js`. (If you prefer a different name, replace every occurrence of `'mership'` in that file with your bucket name before deploying.)
    - Block all public access; the backend uploads objects with the correct ACLs when needed.
-   - Under Permissions → Bucket policy allow the IAM user (created below) to access the bucket.
+   - Under Permissions → Bucket policy allow the IAM user (created below) to access the bucket. You can start with the following JSON and replace the ARN placeholders:
+     ```json
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Effect": "Allow",
+           "Principal": { "AWS": "arn:aws:iam::<account-id>:user/mership-backend" },
+           "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket"],
+           "Resource": [
+             "arn:aws:s3:::mership",
+             "arn:aws:s3:::mership/*"
+           ]
+         }
+       ]
+     }
+     ```
 
 2. **Provision an IAM user for the backend**
    - IAM → Users → “Create user”. Enable programmatic access.
-   - Attach the managed policy `AmazonS3FullAccess` temporarily, then replace it with a custom policy that only grants access to the `mership` bucket.
+   - Attach the managed policy `AmazonS3FullAccess` temporarily, then replace it with a least-privilege policy like the snippet above.
    - Record the **Access key ID** and **Secret access key** – they populate `AWS_ACCESSKEYID` and `AWS_SECRETACCESSKEY` in the backend `.env`.
 
 3. **Launch the MySQL database (Amazon RDS)**
    - RDS → “Create database” → Standard create → MySQL 8.x.
    - Choose the free tier template if eligible, otherwise pick the instance size that matches your workload.
-   - Set the username/password you plan to reuse in `DB_USERNAME` / `DB_PASSWORD`.
-   - Under Connectivity allow the backend security group to connect to port 3306.
-   - After the instance is available, note the endpoint hostname for `DB_HOST` and import your schema/data with MySQL Workbench or the AWS Query Editor.
+   - Set the username/password you plan to reuse in `DB_USERNAME` / `DB_PASSWORD` and specify a database name for `DB_DATABASE`.
+   - Under Connectivity select “Create new VPC security group” and open inbound TCP port 3306. Add the Elastic Beanstalk security group as an allowed source once it exists so only your backend can reach MySQL.
+   - After the instance is available, note the endpoint hostname for `DB_HOST`. Import your schema/data with MySQL Workbench, the AWS Query Editor, or the CLI:
+     ```bash
+     mysql -h <rds-endpoint> -u <user> -p <database> < backend/sql/schema.sql
+     ```
+   - (Optional) Enable automated backups and Multi-AZ for production resilience.
 
 4. **Deploy the backend with Elastic Beanstalk**
    - Zip the contents of the `backend/` folder (you can run `npm install` locally first to verify the app builds, but do not include `node_modules` in the zip – Elastic Beanstalk installs dependencies during deployment).
    - In the AWS console go to Elastic Beanstalk → “Create application”. Choose “Node.js” on Amazon Linux 2023.
    - Upload the zipped backend as the application version. The default start command (`npm start`) uses `backend/package.json`.
-   - Under Configuration → Software add the environment variables from `.env` (all variables listed in the table above plus `PORT` if you want to override the default). Elastic Beanstalk automatically injects `PORT`, so the updated server will bind to it.
-   - Under Configuration → Networking allow inbound HTTPS/HTTP as required. Attach the same security group that can reach the RDS instance.
+   - Under Configuration → Software add the environment variables from `.env` (all variables listed in the table above plus `PORT` if you want to override the default). Elastic Beanstalk automatically injects `PORT`, so the updated server will bind to it. A typical set looks like:
+
+     | Key | Example value |
+     | --- | --- |
+     | `PORT` | `8080` (leave blank to accept EB’s provided value) |
+     | `CORS_HOST` | `https://app.mership.com` |
+     | `AWS_ACCESSKEYID` / `AWS_SECRETACCESSKEY` / `AWS_REGION` | Values from the IAM user |
+     | `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD` / `DB_DATABASE` | Values from RDS |
+     | `SESSION_KEY` / `SESSION_SECRET` | Random strings for cookie management |
+     | `COINBASE_CLIENT` / `COINBASE_WEBHOOK_SECRET` | Secrets from Coinbase Commerce |
+     | `PACKAGE_FEES` | `15` |
+
+   - Under Configuration → Networking attach an HTTPS listener and the security group that allows outbound access to RDS. Map your custom domain later via Route 53 or another DNS provider.
    - Once deployed, note the generated environment URL, e.g. `https://backend-env.eba-1234.us-east-1.elasticbeanstalk.com`.
 
 5. **Set up Coinbase webhooks**
@@ -140,8 +173,11 @@ If you want an end-to-end setup on AWS without touching much code, the following
      VITE_API_BASE_URL="https://<your-backend-domain>" npm run build
      ```
    - Create a second S3 bucket (for example `mership-frontend`) and enable static website hosting or, preferably, create a CloudFront distribution with the bucket as the origin for HTTPS support.
-   - Upload the contents of `frontend/dist` to the bucket (drag-and-drop in the console or use the AWS CLI).
-   - If you use CloudFront, invalidate the cache whenever you deploy a new build.
+   - Upload the contents of `frontend/dist` to the bucket (drag-and-drop in the console or use the AWS CLI):
+     ```bash
+     aws s3 sync dist s3://mership-frontend --delete
+     ```
+   - If you use CloudFront, invalidate the cache whenever you deploy a new build: `aws cloudfront create-invalidation --distribution-id <id> --paths "/*"`.
 
 7. **Wire up the domains and HTTPS**
    - Use Route 53 (or your DNS provider) to create `app.yourdomain.com` (pointing to CloudFront) and `api.yourdomain.com` (pointing to the Elastic Beanstalk load balancer).
@@ -153,4 +189,9 @@ If you want an end-to-end setup on AWS without touching much code, the following
    - Create or update a record in the app that uploads files to verify the IAM credentials can read/write in S3.
    - Trigger a Coinbase payment in sandbox mode to ensure webhooks reach `/webhooks` on the backend.
 
-At this point you have a fully managed AWS deployment: S3 handles both user uploads and the static frontend, RDS stores the relational data, Elastic Beanstalk runs the Express API, and CloudFront/Route 53 provide HTTPS endpoints for users.
+9. **Ongoing operations**
+   - Enable log streaming in Elastic Beanstalk or ship logs to CloudWatch to monitor API health.
+   - Turn on CloudWatch alarms for RDS CPU/storage thresholds and Elastic Beanstalk 5XX error rates.
+   - Schedule regular snapshots for the RDS database and test restoring them in a staging environment.
+
+At this point you have a fully managed AWS deployment: S3 handles both user uploads and the static frontend, RDS stores the relational data, Elastic Beanstalk runs the Express API, and CloudFront/Route 53 provide HTTPS endpoints for users. CloudWatch and RDS backups keep the public deployment healthy over time.
