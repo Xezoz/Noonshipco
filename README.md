@@ -79,6 +79,10 @@ Before running either project you will need:
    npm run build
    ```
    The static assets are emitted to `frontend/dist`. You can preview them locally with `npm run preview` or upload the `dist` folder to any static hosting service (S3, Vercel, Netlify, etc.). Ensure the deployment domain matches the `CORS_HOST` setting in the backend.
+5. (Optional) Run the same build that our CI job executes to catch warnings that surface only in non-interactive environments:
+   ```bash
+   CI=1 npm run build
+   ```
 
 ## Hosting recommendations
 
