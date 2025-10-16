@@ -40,7 +40,12 @@ Before running either project you will need:
    | `COINBASE_WEBHOOK_SECRET` | Coinbase webhook signing secret (required to verify payment events). |
    | `PACKAGE_FEES` | Percentage fee deducted from package payments (e.g. `15` for 15%). |
 
-3. Ensure the MySQL database is reachable from the server and that the schema matches what the API expects (users, orders, payments, etc.).
+3. Provision the MySQL schema the API expects. The repository ships with `backend/sql/schema.sql`, which creates all of the tables referenced in `backend/server.js`:
+   ```bash
+   # from the repository root
+   mysql -u <user> -p<password> <database> < backend/sql/schema.sql
+   ```
+   Update the column defaults or constraints if you already have production data that differs from the starter layout.
 4. Start the server:
    ```bash
    # Development (auto-reload via nodemon)
